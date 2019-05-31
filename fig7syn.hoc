@@ -1,0 +1,42 @@
+// Use pas to emulate steady state synaptic drive
+
+insert pas
+e_pas = 0
+
+proc setgs() {
+  g_pas = gs*1e-6
+}
+
+gs = 13.28 // uS/cm2
+setgs(gs)
+
+
+// Next the dopaminergic synapse.
+// For the first 200 ms, mu is 1.
+// Then it increases suddenly to 1.4.
+// gs is constant
+
+objref syn
+soma syn = new DAsyn(0.5)
+
+// link the POINTERs in caL and kdr to syn.msg
+// hit all internal nodes just in case nseg > 1
+soma for (x,0) { // skip the nodes at 0 and 1
+	setpointer mu_caL(x), syn.msg
+	setpointer mu_kir2(x), syn.msg
+}
+
+
+// we need something to drive syn
+objref stim
+soma stim = new NetStim(0.5)
+stim.interval = 1e9
+stim.number = 1
+stim.start = 200
+stim.noise = 0
+
+// must connect the NetStim to its target
+objref nc
+nc = new NetCon(stim, syn)
+nc.weight = 0.4  // so msg jumps from 1 to 1.4
+nc.delay = 0

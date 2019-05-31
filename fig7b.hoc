@@ -1,0 +1,17 @@
+load_file("nrngui.hoc")
+load_file("model_mu_1.ses")	// basic biophysical properties
+load_file("fig7syn.hoc")	// use pas to emulate steady state synaptic drive
+	// also attach DAsyn point process driven by a NetStim
+	// and link the POINTER vars in caL and kir2 to DAsyn[0].msg
+
+/*
+  these two lines could be bundled into fig7syn.hoc, 
+  but that would make fig7syn.hoc specific to fig. 7b, 
+  and I'd have to call it fig7bsyn.hoc
+*/
+syn.tau0 = 70	// gradual decay
+syn.dur = 200	// plateau phase
+syn.tau1 = 0.1	// rapid rise--make it faster yet?  try 0.5, 0.2, 0.1 ms?
+
+load_file("fig7rig.ses")	// RunControl & Graphs
+load_file("fig7bcontrol.hoc")	// custom init etc.

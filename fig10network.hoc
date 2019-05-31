@@ -1,0 +1,183 @@
+// NetGUI default section. Artificial cells, if any, are located here.
+  create acell_home_
+  access acell_home_
+
+//Network cell templates
+//   C_Cell
+//Artificial cells
+//   Bkgd_NetStim
+//   Stim_NetStim
+//   Stop_NetStim
+//   Reward_NetStim
+
+
+begintemplate C_Cell
+public is_art
+public init, topol, basic_shape, subsets, geom, biophys
+public synlist, x, y, z, position, connect2target
+
+public soma
+public all
+
+objref synlist
+
+proc init() {
+  topol()
+  subsets()
+  geom()
+  biophys()
+  geom_nseg()
+  synlist = new List()
+  synapses()
+  x = y = z = 0 // only change via position
+}
+
+create soma
+
+proc topol() { local i
+  basic_shape()
+}
+proc basic_shape() {
+  soma {pt3dclear() pt3dadd(0, 0, 0, 1) pt3dadd(15, 0, 0, 1)}
+}
+
+objref all
+proc subsets() { local i
+  objref all
+  all = new SectionList()
+    soma all.append()
+
+}
+proc geom() {
+  soma {  /*area = 100 */ L = diam = 5.6419  }
+}
+external lambda_f
+proc geom_nseg() {
+  soma area(.5) // make sure diam reflects 3d points
+   soma { nseg = 1  }
+}
+proc biophys() {
+  soma {
+    Ra = 80
+    cm = 1
+    insert caL
+      Pbar_caL = 42
+    insert kir2
+      gbar_kir2 = 1.2
+    insert ksi
+      gbar_ksi = 0.45
+    insert leak
+      g_leak = 0.008
+      e_leak = -90
+  }
+}
+proc position() { local i
+  soma for i = 0, n3d()-1 {
+    pt3dchange(i, $1-x+x3d(i), $2-y+y3d(i), $3-z+z3d(i), diam3d(i))
+  }
+  x = $1  y = $2  z = $3
+}
+proc connect2target() { //$o1 target point process, $o2 returned NetCon
+  soma $o2 = new NetCon(&v(1), $o1)
+}
+objref syn_
+proc synapses() {
+  /* ExpSyn0 */   soma syn_ = new ExpSyn(0.5)  synlist.append(syn_)
+    syn_.tau = 3
+  /* DAsyn1 */   soma syn_ = new DAsyn(0.5)  synlist.append(syn_)
+}
+func is_art() { return 0 }
+
+endtemplate C_Cell
+
+begintemplate Bkgd_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+    pp.interval = 3
+    pp.number = 1e+09
+    pp.noise = 0.15
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate Bkgd_NetStim
+
+begintemplate Stim_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+    pp.interval = 3
+    pp.number = 1e+09
+    pp.start = 400
+    pp.noise = 0.15
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate Stim_NetStim
+
+begintemplate Stop_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+    pp.number = 1
+    pp.start = 800
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate Stop_NetStim
+
+begintemplate Reward_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+    pp.number = 1
+    pp.start = 500
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate Reward_NetStim
+
+//Network specification interface
+
+objref cells, nclist, netcon
+{cells = new List()  nclist = new List()}
+
+func cell_append() {cells.append($o1)  $o1.position($2,$3,$4)
+	return cells.count - 1
+}
+
+func nc_append() {//srcindex, tarcelindex, synindex
+  if ($3 >= 0) {
+    cells.object($1).connect2target(cells.object($2).synlist.object($3),netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }else{
+    cells.object($1).connect2target(cells.object($2).pp,netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }
+  nclist.append(netcon)
+  return nclist.count - 1
+}
+
+//Network instantiation
+
+  /* C0 */  cell_append(new C_Cell(),	-40,	 57, 0)
+  /* Bkgd1 */  cell_append(new Bkgd_NetStim(),	-88,	 57, 0)
+  /* Stim2 */  cell_append(new Stim_NetStim(),	1,	 57, 0)
+  /* Stop3 */  cell_append(new Stop_NetStim(),	54,	 57, 0)
+  /* Reward4 */  cell_append(new Reward_NetStim(),	-42,	 12, 0)
+  /* Bkgd1 -> C0.ExpSyn0 */  nc_append(1,   0, 0,  1.05e-05,1)
+  /* Stim2 -> C0.ExpSyn0 */  nc_append(2,   0, 0,  2.4e-06,1)
+  /* Reward4 -> C0.DAsyn1 */  nc_append(4,   0, 1,  0.4,1)
+  /* Stop3 -> Stim2    */  nc_append(3, 2, -1,  -2,1)

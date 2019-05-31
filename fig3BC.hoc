@@ -1,0 +1,100 @@
+load_file("nrngui.hoc")
+load_file("model_mu_1.ses")  // specifies the biological properties, including the temperature
+
+mu = 1
+
+soma for (x,0) { // skip the nodes at 0 and 1
+	setpointer mu_caL(x), mu
+	setpointer mu_kir2(x), mu
+}
+
+
+/*
+  Model needs a "synaptic conductance" that is tonically activated
+  Emulate this with pas
+*/
+
+insert pas
+e_pas = 0
+g_pas = 0
+
+
+/* Control and Display */
+
+objref g  // for plotting current vs. v
+
+proc newgraph() {
+  g = new Graph(0)
+  g.size(-90,-30,-1.5,1.5)
+  g.view(-90, -1.5, 60, 3, 507, 105, 300.48, 200.32)
+  g.label(0.4, 0.9, $s1)
+  g.label($s2)
+}
+
+
+/*
+  For each desired value of synaptic conductance gs
+    Over the specified range of membrane potentials
+      Find the steady state total ionic current and append it to a vector
+    Plot the vector of ionic current values against the vector of membrane potentials
+*/
+
+objref vvec, ivecs, tempvec
+vvec = new Vector()
+tempvec = new Vector()
+ivecs = new List()
+
+
+proc sweep() { local record_v, tally, i_ionic
+  tempvec = new Vector()
+  if (vvec.size() == 0) record_v = 1
+  for V = -90,-30 {
+    if (record_v) vvec.append(V)
+    finitialize(V)
+    fcurrent()
+    tempvec.append(ica + ik + i_leak + i_pas)  // these are all mA/cm2, graphs in paper show uA/cm2
+  }
+  tempvec.mul(1000)  // convert mA/cm2 to uA/cm2
+  tally = ivecs.append(tempvec)
+  // plot current vs. v
+  ivecs.object(tally-1).plot(g, vvec)
+}
+
+
+gs = 0  // S/cm2
+
+strdef paramstr
+
+proc batchrun() {
+  // initialize data storage
+  sprint(paramstr, "mu=%g", $2)
+  newgraph($s1, paramstr)
+  vvec = new Vector()
+  ivecs = new List()
+  gs = 0
+  g_pas = gs
+  sweep()
+  for case (&gs, 6e-6, 12e-6, 18e-6, 24e-6) {
+    g_pas = gs
+    sweep()
+  }
+}
+
+proc fig3B() {
+  mu = 1
+  batchrun("Fig. 3B", mu)
+}
+
+proc fig3C() {
+  mu = 1.4
+  batchrun("Fig. 3C", mu)
+}
+
+proc controlpanel() {
+  xpanel("Control",0)
+  xbutton("Fig. 3B","fig3B()")
+  xbutton("Fig. 3C","fig3C()")
+  xpanel(400,105)
+}
+
+controlpanel()

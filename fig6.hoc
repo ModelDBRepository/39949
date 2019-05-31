@@ -1,0 +1,148 @@
+// Reproduces figure 6.
+// Uses different stats for the synaptic drive xi, but this isn't critical.
+
+load_file("nrngui.hoc")
+// to make it easier to take advantage of the GUI tools for setting up the afferent 
+// "baseline" and "test" synaptic drive, this specifies the biological model by using 
+// the NetReadyCellGUI tool's CellBuilder instead of the 
+// Main Menu's simple Build / single compartment
+load_file("fig6netcells.ses")  // defines the biophysical model cell and some artificial spiking cells 
+                           // that are used to generate "baseline" synaptic input and "test" input
+load_file("fig6net.ses")  // specifies the architecture of the "network"--a biophysical model cell
+                      // that receives two inputs--one a sustained "baseline" drive,
+                      // and the other a "test" input that lasts 400 ms
+load_file("fig6netrig.ses")
+
+mu = 1
+
+C_Cell[0].soma for (x,0) { // skip the nodes at 0 and 1
+	setpointer mu_caL(x), mu
+	setpointer mu_kir2(x), mu
+}
+
+
+// final adjustments to all biophysical parameters--
+// specifically temperature, ek, and ca concentrations
+celsius = 20
+forall {
+  if (ismembrane("k_ion")) ek = -90
+  if (ismembrane("ca_ion")) {
+    cai0_ca_ion = 1e-5
+    cai = 1e-5
+    cao0_ca_ion = 2
+    cao = 2
+  }
+}
+
+/*
+ExpSyn's gs = gmax exp(-t/tau), which has area gmax tau.
+If this occurs at a mean interval of T, 
+mean synaptic conductance is gmax tau/T.
+If gmax is 1 pS, tau = 1 ms, T = 10 ms, 
+then mean synaptic conductance is 0.1 pS.
+
+This model has surface area of 100 um2, 
+so a synaptic conductance density of 1 uS/cm2 
+is equivalent to a total conductance of 
+1 (uS/cm2) * 100 um2 * (1 cm2/1e8 um2) = 1e-6 uS = 1 pS.
+
+Gruber et al. use baseline synaptic conductance density = 3 uS/cm2, 
+so this model must have a mean synaptic conductance of 3 pS.
+This can be done with gmax 10 pS, tau 3 ms, T 10 ms.
+So Bkgd_NetStim[0] fires with mean interval of 10 ms, 
+starting at 100 ms, with noise 0.2.
+
+Gruber et al. use test stimuli that achieve 
+mean synaptic conductance densities of 10-22.5 uS/cm2.
+This model achieves 10 uS/cm2 with gmax 10 pS, 
+tau 3 ms (ExpSyn[0].tau is 3 ms), T 3 ms.
+
+The connections to C_Cell[0] both have weight 1e-5, 
+so ExpSyn's gmax = 1e-5 uS = 10 pS.
+
+This       connects         to
+NetCon[0]  Bkgd_NetStim[0]  C_Cell[0]
+NetCon[1]  Stim_NetStim[0]  C_Cell[0]
+NetCon[2]  Stop_NetStim[0]  Stim_NetStim[0]
+*/
+
+
+// two params:  mean intervals of bkgd and test stimuli
+
+proc setparams() {
+  // the background input
+  Bkgd_NetStim[0].pp.interval = $1	// ms
+  Bkgd_NetStim[0].pp.number = 1e9
+  Bkgd_NetStim[0].pp.start = 100	// ms
+  Bkgd_NetStim[0].pp.noise = 0.2
+  NetCon[0].weight = 1e-5	// uS, i.e. 10 pS
+  // the test stimulus
+  Stim_NetStim[0].pp.interval = $2	// ms
+  Stim_NetStim[0].pp.number = 1e9
+  Stim_NetStim[0].pp.start = 400	// ms
+  Stim_NetStim[0].pp.noise = 0.2
+  NetCon[1].weight = 1e-5	// uS, i.e. 10 pS
+  // turns off the test stimulus
+  Stop_NetStim[0].pp.interval = 10	// ms
+  Stop_NetStim[0].pp.number = 1
+  Stop_NetStim[0].pp.start = 800	// ms
+  Stop_NetStim[0].pp.noise = 0
+  NetCon[2].weight = -2
+}
+
+
+objref g
+g = new Graph(0)
+g.view(0, -90, 1200, 60, 786, 168, 300.48, 200.32)
+g.addvar("C_Cell[0].soma.v( 0.5 )", 1, 1, 0.483706, 0.947923, 2)
+graphList[0].append(g)
+
+proc onerun() {
+  g.exec_menu("Keep Lines")
+  run()
+  g.exec_menu("Keep Lines")
+}
+
+
+cvode_active(1)
+
+gs_bkgd = 3	// uS/cm2--"baseline"
+gs_mean = 0	// during test stimulus
+NUMRUNS = 1	// how many for each gs_mean
+
+proc batchrun() { local ii, gmax, tau, Tstim, Tbkgd
+  g.exec_menu("Erase")
+
+  // calc ISI for background input
+  tau = ExpSyn[0].tau
+  gmax = NetCon[0].weight  // this comes from the "Bkgd" cell
+  Tbkgd = gmax * tau * 1e6 / gs_bkgd
+
+
+  // for each test input, calc ISI and do a run
+  gmax = NetCon[1].weight  // this comes from the "Stim" cell
+
+/*
+// control runs, i.e. with test input == 0 so only background is present
+  Stim_NetStim[0].pp.start = 1e9  // "never"
+  for ii = 0,NUMRUNS-1 onerun()
+// prepare for test runs
+  Stim_NetStim[0].pp.start = 300
+*/
+
+// runs with nonzero test input
+  for case (&gs_mean, 10, 12.5, 15, 17.5, 20, 22.5) {
+    // adjust ISI of test input so gs_mean = gs_bkgd + gs_stim reaches desired value
+    if (gs_mean > gs_bkgd) {
+      Tstim = gmax * tau * 1e6 / (gs_mean-gs_bkgd)
+      setparams(Tbkgd, Tstim)
+      for ii = 0,NUMRUNS-1 onerun()
+    }
+  }
+}
+
+
+xpanel("Fig. 6")
+  xbutton("Fig. 6a","gs_bkgd=3 batchrun()")
+  xbutton("Fig. 6b","gs_bkgd=10 batchrun()")
+xpanel(785,435)

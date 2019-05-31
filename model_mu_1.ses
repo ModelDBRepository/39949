@@ -1,0 +1,96 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+
+//Begin SingleCompartment
+{
+load_file("single.hoc")
+}
+ocbox_ = new SingleCompartment(0)
+ocbox_.inserter = new Inserter(0)
+{object_push(ocbox_.inserter)}
+{
+mt.select("pas") i = mt.selected()
+ms[i] = new MechanismStandard("pas")
+ms[i].set("g_pas", 0.008, 0)
+ms[i].set("e_pas", -90, 0)
+mstate[i]= 0
+mt.select("caL") i = mt.selected()
+ms[i] = new MechanismStandard("caL")
+ms[i].set("Pbar_caL", 42, 0)
+mstate[i]= 1
+maction(i)
+mt.select("kir2") i = mt.selected()
+ms[i] = new MechanismStandard("kir2")
+ms[i].set("gbar_kir2", 1.2, 0)
+mstate[i]= 1
+maction(i)
+mt.select("ksi") i = mt.selected()
+ms[i] = new MechanismStandard("ksi")
+ms[i].set("gbar_ksi", 0.45, 0)
+mstate[i]= 1
+maction(i)
+mt.select("leak") i = mt.selected()
+ms[i] = new MechanismStandard("leak")
+ms[i].set("g_leak", 0.008, 0)
+ms[i].set("e_leak", -90, 0)
+mstate[i]= 1
+maction(i)
+}
+{object_pop() doNotify()}
+{object_push(ocbox_)}
+{inserter.v1.map()}
+{endbox()}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.vbox
+ocbox_.map("SingleCompartment", 6, 105, 91.2, 169.92)
+}
+objref ocbox_
+//End SingleCompartment
+
+{
+xpanel("ca_ion (Globals)", 0)
+cai0_ca_ion = 1e-05
+xvalue("cai0_ca_ion","cai0_ca_ion", 1,"", 0, 0 )
+cao0_ca_ion = 2
+xvalue("cao0_ca_ion","cao0_ca_ion", 1,"", 0, 0 )
+xpanel(113,105)
+}
+{
+xpanel("Temperature", 0)
+celsius = 20
+xvalue("celsius","celsius", 1,"", 0, 1 )
+xpanel(113,221)
+}
+{
+xpanel("soma(0 - 1) (Parameters)", 0)
+xlabel("soma(0 - 1) (Parameters)")
+xlabel("nseg = 1")
+soma.L = 3.1831
+xvalue("L","soma.L", 1,"define_shape()", 0, 0 )
+soma.diam = 10
+xvalue("diam","soma.diam", 1,"", 0, 0 )
+soma.cm = 1
+xvalue("cm","soma.cm", 1,"", 0, 0 )
+soma.Pbar_caL = 42
+xvalue("Pbar_caL","soma.Pbar_caL", 1,"", 0, 0 )
+soma.cai = 1e-05
+xvalue("cai","soma.cai", 1,"", 0, 0 )
+soma.cao = 2
+xvalue("cao","soma.cao", 1,"", 0, 0 )
+soma.gbar_kir2 = 1.2
+xvalue("gbar_kir2","soma.gbar_kir2", 1,"", 0, 0 )
+soma.gbar_ksi = 0.45
+xvalue("gbar_ksi","soma.gbar_ksi", 1,"", 0, 0 )
+soma.ek = -90
+xvalue("ek","soma.ek", 1,"", 0, 0 )
+soma.g_leak = 0.008
+xvalue("g_leak","soma.g_leak", 1,"", 0, 0 )
+soma.e_leak = -90
+xvalue("e_leak","soma.e_leak", 1,"", 0, 0 )
+xpanel(53,310)
+}
+objectvar scene_vector_[1]
+{doNotify()}

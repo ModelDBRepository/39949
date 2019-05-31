@@ -1,0 +1,37 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[9]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+
+//Begin NetGUI[0]
+{
+load_file("netbild.hoc")
+}
+{ocbox_ = new NetGUI(1)}
+{object_push(ocbox_)}
+{mapold2new = new Vector()  missing = new List()}
+original_type("C")
+original_type("Bkgd")
+original_type("Stim")
+original_type("Stop")
+original_type("Reward")
+newnode(0, -40, 57)
+newnode(1, -88, 57)
+newnode(2, 1, 57)
+newnode(3, 54, 57)
+newnode(4, -42, 12)
+newedge(1, 0, 0, 1.05e-05, 1)
+newedge(2, 0, 0, 2.4e-06, 1)
+newedge(3, 2, 0, -2, 1)
+newedge(4, 0, 1, 0.4, 1)
+{create_ = 1  create1()}
+{g.size(-166.667,166.667,-124.997,124.997)}
+{object_pop()}
+{
+ocbox_.map("NetGUI[0]", 6, 657, 528, 327.36)
+}
+objref ocbox_
+//End NetGUI[0]
+
+objectvar scene_vector_[1]
+{doNotify()}

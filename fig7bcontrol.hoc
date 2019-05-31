@@ -1,0 +1,44 @@
+/* Control and Display */
+
+cvode_active(1)
+
+
+// custom initialization
+// initialize to steady state
+
+proc init() { local dtsav, temp
+  finitialize( v_init)
+  t = -1e10
+  dtsav = dt
+  dt = 1e8
+  // if cvode is on, turn it off to do large fixed step
+  temp = cvode.active()
+  if (temp!=0) { cvode.active(0) }
+  while (t<-1e9) { fadvance() }
+  // restore cvode if necessary
+  if (temp!=0) { cvode.active(1) }
+  dt = dtsav
+  t = 0
+  if (cvode.active()) {
+    cvode.re_init()
+  } else {
+    fcurrent()
+  }
+  frecord_init()
+}
+
+proc onerun() { local saved_tau
+  Graph[1].exec_menu("Keep Lines")
+  run()
+  Graph[1].exec_menu("Keep Lines")
+}
+
+proc batchrun() {
+  Graph[1].exec_menu("Erase")
+  for case (&gs, 12.3, 12.95, 13.13, 13.31, 13.45, 14.2) {
+    setgs(gs)
+    onerun()
+  }
+}
+
+batchrun()

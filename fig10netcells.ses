@@ -1,0 +1,199 @@
+load_file("nrngui.hoc")
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+
+//Begin ArtCellGUI[0]
+{
+load_file("netbild.hoc")
+}
+ocbox_ = new ArtCellGUI(1)
+{object_push(ocbox_)}
+{
+tobj = new MechanismStandard("NetStim")
+tobj.set("interval", 3, 0)
+tobj.set("number", 1e+09, 0)
+tobj.set("start", 50, 0)
+tobj.set("noise", 0.15, 0)
+}
+{append(tobj, "Bkgd")}
+{
+tobj = new MechanismStandard("NetStim")
+tobj.set("interval", 3, 0)
+tobj.set("number", 1e+09, 0)
+tobj.set("start", 400, 0)
+tobj.set("noise", 0.15, 0)
+}
+{append(tobj, "Stim")}
+{
+tobj = new MechanismStandard("NetStim")
+tobj.set("interval", 10, 0)
+tobj.set("number", 1, 0)
+tobj.set("start", 800, 0)
+tobj.set("noise", 0, 0)
+}
+{append(tobj, "Stop")}
+{
+tobj = new MechanismStandard("NetStim")
+tobj.set("interval", 10, 0)
+tobj.set("number", 1, 0)
+tobj.set("start", 500, 0)
+tobj.set("noise", 0, 0)
+}
+{append(tobj, "Reward")}
+{object_pop()}
+{
+ocbox_.map("ArtCellGUI[0]", 6, 367, 449.28, 291.84)
+}
+objref ocbox_
+//End ArtCellGUI[0]
+
+
+//Begin NetReadyCellGUI[0]
+{
+load_file("netbild.hoc")
+}
+{ocbox_ = new NetReadyCellGUI(1)}
+{ocbox_.tobj = new CellBuild(1)}
+{object_push(ocbox_.tobj)}
+{
+version(5.1)
+continuous = 0
+}
+{object_push(topol)}
+{
+first = 0
+slist.remove_all()
+sname = "dend"
+objref tobj
+}
+{
+tobj = new CellBuildSection("soma",0, 0, tobj, 0) slist.append(tobj)
+  tobj.position(0,0,15,0) tobj.lx=7.5 tobj.ly=0 tobj.i3d=0
+all_init()
+}
+for i=0, slist.count-1 {slist.object(i).rdses()}
+{object_pop()}
+{
+}
+{object_push(subsets)}
+{first = 0}
+{consist()}
+{object_pop()}
+{
+}
+{object_push(geom)}
+{
+first = 0
+tobj = new GeoSpec(2)
+tobj.value = 100
+bild.topol.slist.object(0).geo.append(tobj)
+tobj = new GeoSpec(4)
+tobj.value = 1
+bild.topol.slist.object(0).geo.append(tobj)
+set_default()
+}
+{object_pop()}
+{
+}
+{object_push(memb)}
+{first=0}
+{
+tobj = new GeoSpec(0)
+tobj.value = 80
+tobj.set_default()
+tobj = new MStanWrap(tobj, 0)
+bild.topol.slist.object(0).ml.append(tobj)
+}
+{
+tobj = new GeoSpec(1)
+tobj.value = 1
+tobj.set_default()
+tobj = new MStanWrap(tobj, 0)
+bild.topol.slist.object(0).ml.append(tobj)
+}
+{
+tobj = new MechanismStandard("caL")
+tobj.set("Pbar_caL", 42, 0)
+tobj = new MStanWrap(tobj, 1)
+bild.topol.slist.object(0).ml.append(tobj)
+}
+{
+tobj = new MechanismStandard("kir2")
+tobj.set("gbar_kir2", 1.2, 0)
+tobj = new MStanWrap(tobj, 1)
+bild.topol.slist.object(0).ml.append(tobj)
+}
+{
+tobj = new MechanismStandard("ksi")
+tobj.set("gbar_ksi", 0.45, 0)
+tobj = new MStanWrap(tobj, 1)
+bild.topol.slist.object(0).ml.append(tobj)
+}
+{
+tobj = new MechanismStandard("leak")
+tobj.set("g_leak", 0.008, 0)
+tobj.set("e_leak", -90, 0)
+tobj = new MStanWrap(tobj, 1)
+bild.topol.slist.object(0).ml.append(tobj)
+}
+{object_pop()}
+{
+}
+{object_push(manage)}
+{
+first = 0
+classname = "Cell"
+etop=1 esub=1 egeom=1 emem=1
+itop=1 isub=0 igeom=0 imem=0
+bild.topol.names_off = 0
+bild.topol.circles_off = 0
+output_index = 0  output_x = 1
+}
+{object_pop()}
+{
+cexport()
+}
+{object_pop()}
+{
+save_window_=ocbox_.tobj.gtopol
+save_window_.size(-200,200,-150,150)
+scene_vector_[2] = save_window_
+ocbox_.tobj.gtopol = save_window_
+save_window_.save_name("ocbox_.tobj.gtopol")
+}
+{object_push(ocbox_)}
+stgui = new SynTypeGUI(1)
+{object_push(stgui)}
+{
+tobj = new MechanismStandard("ExpSyn")
+tobj.set("tau", 3, 0)
+tobj.set("e", 0, 0)
+}
+{append(tobj, "ExpSyn")}
+{
+tobj = new MechanismStandard("DAsyn")
+tobj.set("tau0", 100, 0)
+tobj.set("tau1", 70, 0)
+tobj.set("dur", 600, 0)
+}
+{append(tobj, "DAsyn")}
+{object_pop()}
+nrc = new NetReadyCell(tobj, stgui.stypelist)
+nrc.name = "C"
+tobj = nrc.cb.topol.slist.object(0)
+{nrc.synlist.append(new SynTypeInstance(nrc.stype.object[0],tobj,0.5,0.5,-1))}
+tobj = nrc.cb.topol.slist.object(0)
+{nrc.synlist.append(new SynTypeInstance(nrc.stype.object[1],tobj,0.5,0.5,2))}
+{g.size(-166.667,166.667,-106.666,106.666)}
+{object_pop()}
+{
+ocbox_.map("NetReadyCellGUI[0]", 6, 105, 404.16, 317.76)
+}
+objref ocbox_
+//End NetReadyCellGUI[0]
+
+objectvar scene_vector_[1]
+{doNotify()}

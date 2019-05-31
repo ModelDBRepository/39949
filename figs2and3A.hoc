@@ -1,0 +1,11 @@
+load_file("nrngui.hoc")
+load_file("model_mu_1.ses")  // specifies the biological properties, including the temperature
+
+msg = 1
+
+soma for (x,0) { // skip the nodes at 0 and 1
+	setpointer mu_caL(x), msg
+	setpointer mu_kir2(x), msg
+}
+
+load_file("figs2and3A.ses")  // the 3 Graphers

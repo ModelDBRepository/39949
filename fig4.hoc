@@ -1,0 +1,87 @@
+load_file("nrngui.hoc")
+load_file("model_mu_1.ses")  // specifies the biological properties, including the temperature
+
+mu = 1
+
+soma for (x,0) { // skip the nodes at 0 and 1
+	setpointer mu_caL(x), mu
+	setpointer mu_kir2(x), mu
+}
+
+
+/* Control and Display */
+
+objref g  // for plotting current vs. v
+
+proc newgraph() {
+  g = new Graph(0)
+  g.size(0,25,-90,-30)
+  g.view(0, -90, 25, 60, 399, 105, 300.48, 255.04)
+  g.label(0.4, 0.9, $s1)
+}
+
+BLACK = 1
+RED = 2
+BLUE = 3
+GREEN = 4
+ORANGE = 5
+BROWN = 6
+VIOLET = 7
+YELLOW = 8
+GREY = 9
+
+objref color
+color = new Vector(5)
+// the sequence used in Fig. 4
+color.x[0]=BLACK
+color.x[1]=YELLOW
+color.x[2]=GREEN
+color.x[3]=BLUE
+color.x[4]=RED
+
+
+/*
+  For each desired value of mu
+    Over the specified range of membrane potentials
+      Find the steady state total ionic current and append it to a vector
+      Use this vector to compute the vector of corresponding synaptic conductances
+    Plot the the vector of membrane potentials against the vector of synaptic conductances
+*/
+
+objref vvec, gsvecs, tempvec, vvecs
+vvec = new Vector()
+tempvec = new Vector()
+gsvecs = new List()
+vvecs = new List()
+
+proc sweep() { local record_v, tally, i_ionic
+  tempvec = new Vector()
+  if (vvec.size() == 0) record_v = 1
+  for V = -90,-30 {
+    if (record_v) vvec.append(V)
+    finitialize(V)
+    fcurrent()
+    tempvec.append(-(ica + ik + i_leak)/V)  // S/cm2
+  }
+  tempvec.mul(1e6)  // convert S/cm2 to uS/cm2
+  tally = gsvecs.append(tempvec)
+  vvecs.append(vvec.c)
+  // plot gs vs. v
+  vvecs.object(tally-1).plot(g, gsvecs.object(tally-1), $1, 2)
+}
+
+
+// strdef paramstr
+
+proc batchrun() { local ii
+  newgraph($s1)
+  // initialize data storage
+  vvec = new Vector()
+  gsvecs = new List()
+  for ii = 0,4 {
+    mu = 1 + ii*0.1
+    sweep(color.x[ii])
+  }
+}
+
+batchrun("Fig. 4")

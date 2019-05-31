@@ -1,0 +1,40 @@
+/*
+NetCon precell target      weight
+  0    Bkgd1   C0.ExpSyn0  1.05e-5
+  1    Stim2   C0.ExpSyn0  2.4e-6 (weak) or 3.8e-6 (strong)
+  2    Stop3   Stim2       -2
+  3    Reward4 C0.DASyn1   0.4
+
+NETGUI      Instance
+ name        name
+C0          C_Cell[0]
+Bkgd1       Bkgd_NetStim[0]
+Stim2       Stim_NetStim[0]
+Stop3       Stop_NetStim[0]
+Reward4     Reward_NetStim[0]
+
+C0_ExpSyn0  ExpSyn[0]
+C0_DAsyn1   DAsyn[0]
+*/
+
+objref hbox
+hbox = new HBox()
+hbox.intercept(1)
+  xpanel("")
+    xlabel("Cortical input")
+    xradiobutton("strong", "NetCon[1].weight = 3.8e-6")
+    xradiobutton("weak", "NetCon[1].weight = 2.4e-6")
+    xlabel("default is weak")
+  xpanel()
+  xpanel("")
+    xlabel("Target")
+    xradiobutton("rewarded", "Reward_NetStim[0].pp.start = 500")
+    xradiobutton("unrewarded", "Reward_NetStim[0].pp.start = 1e9")
+    xlabel("default is unrewarded")
+  xpanel()
+hbox.intercept(0)  //ends intercept mode
+hbox.map("Experimental conditions", 780, 22, 249.6, 106.56) //draw the box and its contents
+
+// default condition:
+NetCon[1].weight = 2.4e-6  // weak cortical input
+Reward_NetStim[0].pp.start = 1e9  // unrewarded

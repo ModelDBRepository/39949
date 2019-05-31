@@ -1,0 +1,6 @@
+// link the POINTERs in caL and kdr to syn.msg
+// hit all internal nodes just in case nseg > 1
+C_Cell[0].soma for (x,0) { // skip the nodes at 0 and 1
+	setpointer mu_caL(x), DAsyn[0].msg
+	setpointer mu_kir2(x), DAsyn[0].msg
+}

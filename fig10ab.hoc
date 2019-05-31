@@ -1,0 +1,66 @@
+load_file("nrngui.hoc")
+
+/*
+  A single compartment model contains the biophysical properties.
+  ExpSyn provides the "excitatory cortical inputs" 
+    (tonic background "context" and phasic "visual stimulus").
+  DAsyn 
+
+  Two NetStims drive the ExpSyn--Bkgd and Stim.
+  A third NetStim called Stop turns off Stim.
+
+  DAsyn is activated and deactivated by hoc-generated events, 
+  which take care of setting its time constant and steady state 
+  to the desired values (70 ms and 1.4 during the "on" phase, 
+  100 ms and 1.0 during the "off" phase).
+*/
+
+/*
+ExpSyn's gs = gmax exp(-t/tau), which has area gmax tau.
+If this occurs at a mean interval of T, 
+mean synaptic conductance is gmax tau/T.
+If gmax is 1 pS, tau = 1 ms, T = 10 ms, 
+then mean synaptic conductance is 0.1 pS.
+
+This model has surface area of 100 um2, 
+so a synaptic conductance density of 1 uS/cm2 
+is equivalent to a total conductance of 
+1 (uS/cm2) * 100 um2 * (1 cm2/1e8 um2) = 1e-6 uS = 1 pS.
+
+For Fig. 10, Gruber et al. use 
+baseline synaptic conductance density = 10.5 uS/cm2.
+If gmax is 10.5 pS, tau 3 ms, then T = gmax tau / meangs = 3 ms.
+So Bkgd_NetStim[0] fires with mean interval of 3 ms, 
+starting at 50 ms, with noise 0.15.
+
+For Fig. 10, Gruber et al. use two different test stimuli:
+weak, which produces gt 2.4 uS/cm2 (total meangs 12.9 uS/cm2)
+  and
+strong, which produces gt 3.8 uS/cm2 (total meangs 14.3 uS/cm2).
+The weak stimulus therefore is represented by events with weight 
+2.4 pS occurring at a mean interval of 3 ms, 
+and the strong stimulus by events with weight
+3.8 pS occurring at a mean interval of 3 ms.
+In both cases, noise is 0.15.
+This is the NetCon from Stim_NetStim[0] to ExpSyn[0] on C_Cell[0]
+*/
+
+load_file("fig10netcells.ses")
+load_file("fig10net.ses")
+load_file("fig10syn.hoc")	// link the POINTER vars in caL and kir2 to DAsyn[0].msg
+
+
+load_file("fig10netrig.ses")
+load_file("exptl_conditions.hoc")  // strong vs. weak, rewarded vs. unrewarded
+
+
+celsius = 20
+forall {
+  if (ismembrane("k_ion")) ek = -90
+  if (ismembrane("ca_ion")) {
+    cai0_ca_ion = 1e-5
+    cai = 1e-5
+    cao0_ca_ion = 2
+    cao = 2
+  }
+}
